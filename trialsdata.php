@@ -165,7 +165,7 @@ class plgCSVUploadsTrialsData extends JPlugin
             exit;
         }
 
-        return true;
+        return false;
     }
 
     /**
@@ -218,11 +218,8 @@ class plgCSVUploadsTrialsData extends JPlugin
      */
     public function clean_yn($text, $default)
     {
-        #echo "1<pre>"; var_dump( $text ); echo "</pre>";
         $text = strtoupper(trim($this->clean($text), "'"));
-        #echo "2<pre>"; var_dump( $text ); echo "</pre>";
         $text = empty($text) ? $default : $text;
-        #echo "3<pre>"; var_dump( $text ); echo "</pre>";
         return "'" . $text . "'";
     }
 }
