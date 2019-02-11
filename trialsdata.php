@@ -61,8 +61,8 @@ class plgCSVUploadsTrialsData extends JPlugin
      */
     public function onAfterLoadCSV($csv, $filename)
     {
-        if ($filename != 'Trials-Data.csv') {
-
+        if ($filename != 'trials-data.csv') {
+            return false;
         }
 
         $sql = 'SELECT id FROM trials_data';
@@ -165,7 +165,7 @@ class plgCSVUploadsTrialsData extends JPlugin
             exit;
         }
 
-        return false;
+        return 'STOP';
     }
 
     /**
