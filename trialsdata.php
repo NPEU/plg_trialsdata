@@ -57,7 +57,7 @@ class plgCSVUploadsTrialsData extends JPlugin
     /**
      * @param   array  $csv  Array holding data
      *
-     * @return  boolean  True on success
+     * @return  mixed  Boolean true on success or String 'STOP'
      */
     public function onAfterLoadCSV($csv, $filename)
     {
