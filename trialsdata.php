@@ -57,7 +57,7 @@ class plgCSVUploadsTrialsData extends JPlugin
     /**
      * @param   array  $csv  Array holding data
      *
-     * @return  mixed  Boolean true on success or String 'STOP'
+     * @return  string 'STOP'
      */
     public function onAfterLoadCSV($csv, $filename)
     {
@@ -112,14 +112,14 @@ class plgCSVUploadsTrialsData extends JPlugin
                 'rec_end'             => $rec_end,
                 'rec_end_note'        => $this->clean($row['Rec. end note']),
                 'rec_target'          => $this->clean($row['Rec. target']),
-                'rec_total'           => $this->clean($row['Rec. total']),
+                'rec_total'           => $this->clean_int($row['Rec. total']),
                 'rec_note'            => $this->clean($row['Rec. note']),
-                'grant_start'         => $this->clean($row['GRANT START DATE']),
+                'grant_start'         => $this->clean_year($row['GRANT START DATE']),
                 'grant_start_note'    => $this->clean($row['Grant start note']),
                 'grant_end'           => $grant_end,
                 'grant_end_note'      => $this->clean($row['Grant end note']),
                 'any_end'             => $any_end,
-                'protocol_year'       => $this->clean($row['Protocol year']),
+                'protocol_year'       => $this->clean_year($row['Protocol year']),
                 'protocol_year_note'  => $this->clean($row['Protocol year note']),
                 'publications'        => $this->clean($row['Publications']),
                 'published_protocol'  => $this->clean($row['Published protocol']),
@@ -190,6 +190,22 @@ class plgCSVUploadsTrialsData extends JPlugin
     public function clean($text)
     {
         return "'" . trim(str_replace("'", "\'", $text)) . "'";
+    }
+
+    /**
+     * Cleans integers.
+     *
+     * @param string $text
+     * @return string
+     * @access public
+     */
+    public function clean_int($int)
+    {
+        $int = trim($this->clean($int), "'");
+        if (empty($text) || !is_int($int)) {
+            $int = 'Null';
+        }
+        return $int;
     }
 
     /**
