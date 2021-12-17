@@ -98,6 +98,7 @@ class plgCSVUploadsTrialsData extends JPlugin
                 'id'                  => $this->clean($row['ID']),
                 'title'               => $this->clean($row['Title']),
                 'long_title'          => $this->clean($row['Long Title']),
+                'descriptor'          => $this->clean($row['Descriptor']),
                 'status'              => $this->html_id(preg_replace('/\d/', '', $row['Status'])),
                 'status_full'         => $this->clean($row['Status']),
                 'supported_trial'     => $this->clean_yn($row['Supported Trial'], 'N'),
