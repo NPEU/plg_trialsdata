@@ -134,6 +134,7 @@ class plgCSVUploadsTrialsData extends JPlugin
                 'isrctn'              => $this->clean($row['ISRCTN']),
                 'ctu'                 => $this->clean($row['Clinical Trials Unit']),
                 'sponser'             => $this->clean($row['Sponsor']),
+                'controller'          => $this->clean($row['Data Controller']),
                 'duration'            => $this->clean($row['Duration of study']),
                 'logo_alt'            => $this->clean($row['Logo alt text'])
             );
