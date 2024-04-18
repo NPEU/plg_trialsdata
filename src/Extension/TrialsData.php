@@ -162,6 +162,7 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 'publications'        => $this->clean($row['Publications']),
                 'published_protocol'  => $this->clean($row['Published protocol']),
                 'initial_source'      => $this->clean($row['Initial source']),
+                'summary_of_results'  => $this->clean($row['Summary of Results']),
                 'web_include'         => $this->clean_yn($row['Web include'], 'Y'),
                 'web_landing_include' => $this->clean_yn($row['Landing include'], 'Y'),
                 'web_home'            => $this->clean($row['Web alias']),
