@@ -195,7 +195,7 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
 
         // Take Nulls out of quotes:
         $sql  = str_replace("'Null'", "Null", $sql);
-        $this->t_db->query($sql);
+        #$this->t_db->query($sql);
 
         #echo '<pre>'; var_dump($sql); echo '</pre>'; exit;
 
