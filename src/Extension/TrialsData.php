@@ -163,6 +163,7 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 'any_end'             => $any_end,
                 'protocol_year'       => $this->clean_year($row['Protocol year']),
                 'protocol_year_note'  => $this->clean($row['Protocol year note']),
+                'summary'             => $this->clean($row['Summary']),
                 'publications'        => $this->clean($row['Publications']),
                 'published_protocol'  => $this->clean($row['Published protocol']),
                 'initial_source'      => $this->clean($row['Initial source']),
