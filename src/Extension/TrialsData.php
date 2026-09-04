@@ -25,8 +25,6 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
 
     protected $t_db;
 
-    protected $j_date_format = 'Y-m-d H:i:s';
-
     /**
      * An internal flag whether plugin should listen any event.
      *
@@ -64,17 +62,17 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
         // if you prefer to store these elsewhere, then the database_credentials.php can instead
         // require another file or indeed any other mechansim of retrieving the credentials, just so
         // long as those four variables are assigned.
-        /*require_once(realpath(dirname(dirname(__DIR__))) . '/database_credentials.php');
+        require_once(realpath(dirname(dirname(__DIR__))) . '/database_credentials.php');
 
         try {
-            $db = new \PDO("mysql:host=$hostname;dbname=$database", $username, $password, [
+            $this->t_db = new \PDO("mysql:host=$hostname;dbname=$database", $username, $password, [
                 \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8;'
             ]);
         }
         catch(\PDOException $e) {
             echo $e->getMessage();
             exit;
-        }*/
+        }
     }
 
     /**
@@ -104,21 +102,21 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
             return false;
         }
 
-        $user_id = Factory::getApplication()->getIdentity()->get('id');
+        #$sql = 'SELECT id FROM trials_data';
+        $sql = 'SELECT id FROM jancore_trials';
 
-        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $query = $db->getQuery(true);
-        $query->select($db->quoteName('id'))
-              ->from($db->quoteName('#__trials'));
-
-        $db->setQuery($query);
-        $rows = $db->loadAssocList();
+        $stmt = $this->t_db->prepare($sql);
+        $stmt->execute();
 
         $ids  = [];
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         foreach($rows as $row) {
             $ids[] = $row['id'];
         }
 
+        // Remove first row as it's heading names:
+        #array_shift( $csv );
+        $sql = [];
         foreach ($csv as  $row) {
 
             $rec_end   = $this->clean_year($row['Rec. end']);
@@ -134,10 +132,9 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 }
             }
 
-            $data = (object) [
-                'id'                  => $row['ID'],
+            $data = [
+                'id'                  => $this->clean($row['ID']),
                 'title'               => $this->clean($row['Title']),
-                'alias'               => !empty($row['Web alias']) ? $this->clean($row['Web alias']) : $this->html_id($row['Title']),
                 'long_title'          => $this->clean($row['Long Title']),
                 'descriptor'          => $this->clean($row['Descriptor']),
                 'status'              => $this->html_id(preg_replace('/\d/', '', $row['Status'])),
@@ -150,13 +147,13 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 'obstetric-neonatal'  => $this->clean($row['Obstetric / Neonatal']),
                 'any_start'           => $this->clean_year($row['Any start']),
                 'rec_start'           => $this->clean_year($row['Rec. start']),
-                'rec_start_note'      => $this->clean($row['Rec. end note']),
+                'rec_start_note'      => $this->clean($row['Rec. start note']),
                 'rec_end'             => $rec_end,
                 'rec_end_note'        => $this->clean($row['Rec. end note']),
                 'rec_target'          => $this->clean($row['Rec. target']),
                 'rec_total'           => $this->clean_int($row['Rec. total']),
                 'rec_note'            => $this->clean($row['Rec. note']),
-                'grant_start'         => $this->clean_date($row['GRANT START DATE']),
+                'grant_start'         => $this->clean_year($row['GRANT START DATE']),
                 'grant_start_note'    => $this->clean($row['Grant start note']),
                 'grant_end'           => $grant_end,
                 'grant_end_note'      => $this->clean($row['Grant end note']),
@@ -164,14 +161,15 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 'protocol_year'       => $this->clean_year($row['Protocol year']),
                 'protocol_year_note'  => $this->clean($row['Protocol year note']),
                 'summary'             => $this->clean($row['Summary']),
+                'summary_of_results'  => $this->clean($row['Summary of Results']),
                 'publications'        => $this->clean($row['Publications']),
                 'published_protocol'  => $this->clean($row['Published protocol']),
                 'initial_source'      => $this->clean($row['Initial source']),
-                'summary_of_results'  => $this->clean($row['Summary of Results']),
                 'other_files'         => $this->clean($row['Other files']),
                 'web_include'         => $this->clean_yn($row['Web include'], 'Y'),
                 'web_landing_include' => $this->clean_yn($row['Landing include'], 'Y'),
                 'web_home'            => $this->clean($row['Web alias']),
+                'alias'               => isset($row['Web alias']) ? $this->clean($row['Web alias']) : $this->html_id($row['Title']),
                 'eudract'             => $this->clean($row['EudraCT No.']),
                 'rec_ref'             => $this->clean($row['REC Reference']),
                 'isrctn'              => $this->clean($row['ISRCTN']),
@@ -179,42 +177,39 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
                 'sponsor'             => $this->clean($row['Sponsor']),
                 'controller'          => $this->clean($row['Data Controller']),
                 'duration'            => $this->clean($row['Duration of study']),
-                'logo_alt'            => $this->clean($row['Logo alt text']),
-                'modified'            => $this->clean(date($this->j_date_format)),
-                'modified_by'         => $user_id
+                'logo_alt'            => $this->clean($row['Logo alt text'])
             ];
 
             if (in_array($row['ID'], $ids)) {
-                // Update:
+                // Update
+                $id = $row['ID'];
+                unset($data['id']);
 
-                $result = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)->updateObject('#__trials', $data, 'id', true);
+                array_walk($data, function(&$value, $key){
+                    $value = '`' . $key . "`=" . $value;
+                });
+                #$sql[] = 'UPDATE `trials_data` SET ' . implode(',', $data) . ' WHERE id = ' . $id . ";";
+                $sql[] = 'UPDATE `jancore_trials` SET ' . implode(',', $data) . ' WHERE id = ' . $id . ";";
             } else {
-                //Insert:
-
-                // Find brand id:
-                $brand_query = $db->getQuery(true);
-
-                // Select the required fields from the table.
-                $brand_query->select('id')
-                        ->from($db->quoteName('#__brands'))
-                        ->where('alias = "' . $data->alias . '"');
-                $db->setQuery($brand_query);
-                if (!$db->execute($brand_query)) {
-                    throw new GenericDataException($db->stderr(), 500);
-                    return false;
-                }
-
-                $brand_id = $db->loadResult();
-                if ($brand_id) {
-                    $data->brand_id = $brand_id;
-                }
-
-                // Add standard values:
-                $data->created    = $this->clean(date($this->j_date_format));
-                $data->created_by = $user_id;
-
-                $result = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)->insertObject('#__trials', $data, 'id', true);
+                //Insert
+                #$sql[] = 'INSERT INTO `trials_data` (`' . implode('`,`', array_keys($data)). '`) VALUES (' . implode(",", $data) . ');';
+                $sql[] = 'INSERT INTO `jancore_trials` (`' . implode('`,`', array_keys($data)). '`) VALUES (' . implode(",", $data) . ');';
             }
+        }
+        $sql = implode("\n", $sql);
+
+        // Take Nulls out of quotes:
+        $sql  = str_replace("'Null'", "Null", $sql);
+        #$this->t_db->query($sql);
+
+        #echo '<pre>'; var_dump($sql); echo '</pre>'; exit;
+
+        try {
+            $this->t_db->query($sql);
+        }
+        catch(\PDOException $e) {
+            echo $e->getMessage();
+            exit;
         }
 
         return 'STOP';
@@ -229,7 +224,7 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
      */
     public function html_id($text)
     {
-        return strtolower(preg_replace('/\s+/', '-', trim(preg_replace('/[^a-zA-z0-9-_\s]/', '', $text))));
+        return "'" . strtolower(preg_replace('/\s+/', '-', trim(preg_replace('/[^a-zA-z0-9-_\s]/', '', $text)))) . "'";
     }
 
     /**
@@ -241,22 +236,21 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
      */
     public function clean($text)
     {
-        return trim(str_replace("'", "\'", $text));
+        return "'" . trim(str_replace("'", "\'", $text)) . "'";
     }
 
     /**
      * Cleans integers.
      *
      * @param string $text
-     * @return string|null
+     * @return string
      * @access public
      */
     public function clean_int($int)
     {
-        $int = trim(trim($this->clean($int), "'"));
-
-        if (empty($int) || !is_int($int)) {
-            $int = null;
+        $int = trim($this->clean($int), "'");
+        if (empty($text) || !is_int($int)) {
+            $int = 'Null';
         }
         return $int;
     }
@@ -265,38 +259,14 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
      * Creates year values
      *
      * @param string $text
-     * @return string|null
-     * @access public
-     */
-    public function clean_date($text)
-    {
-        $text = trim(trim($this->clean($text), "'"));
-
-        if (empty($text)) {
-            $date = '0000-00-00';
-        } elseif (strlen($text) == 4) {
-            // Assume this must be a year
-            $date = $text . '-00-00';
-        } else {
-            // If entry uses slashes, convert to dashes so strtotime uses UK date format:
-            $date = date('Y-m-d', strtotime(str_replace('/', '-', $text)));
-        }
-
-        return $date;
-    }
-
-    /**
-     * Creates year values
-     *
-     * @param string $text
-     * @return string|null
+     * @return string
      * @access public
      */
     public function clean_year($text)
     {
-        $text = trim(trim($this->clean($text), "'"));
+        $text = trim($this->clean($text), "'");
         if (empty($text)) {
-            $text = null;
+            $text = 'Null';
         }
         return $text;
     }
@@ -313,6 +283,6 @@ class TrialsData extends CMSPlugin implements SubscriberInterface
     {
         $text = strtoupper(trim($this->clean($text), "'"));
         $text = empty($text) ? $default : $text;
-        return $text;
+        return "'" . $text . "'";
     }
 }
